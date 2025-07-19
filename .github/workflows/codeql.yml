@@ -1,0 +1,58 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ "3.2.7" ]
+  pull_request:
+    branches: [ "3.2.7" ]
+  schedule:
+    - cron: '0 1 * * 0'  # weekly scan
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'java' ]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        build-mode: manual
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Build WebGoat with Maven
+      run: ./mvnw clean install -DskipTests=true
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      # NOTE: 'output' is not a valid input to this action; it auto-generates SARIF reports.
+
+    - name: Locate SARIF Report
+      run: |
+        find . -name '*.sarif' -exec cp {} codeql-report.sarif \;
+      shell: bash
+
+    - name: Upload SARIF Report as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: codeql-report
+        path: codeql-report.sarif
