@@ -18,6 +18,7 @@ on:
     branches: [ "main" ]
   schedule:
     - cron: '33 5 * * 2'
+  workflow_dispatch:
 
 jobs:
   analyze:
@@ -100,3 +101,9 @@ jobs:
       uses: github/codeql-action/analyze@v3
       with:
         category: "/language:${{matrix.language}}"
+
+    - name: Upload SARIF Report as Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: codeql-report
+        path: codeql-report.sarif
